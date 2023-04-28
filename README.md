@@ -1,73 +1,106 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# Auxiliador para o jogo Academia
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+O Auxiliador para o jogo Academia é um projeto em NestJS com TypeScript que permite aos jogadores cadastrar palavras e definições, e aos moderadores cadastrar respostas corretas. Ele também fornece a funcionalidade de pontuação de acordo com a partida.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Banco de Dados
 
-## Description
+O projeto utiliza um banco de dados em memória para armazenar os cards cadastrados.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Endpoints
 
-## Installation
+O projeto possui os seguintes endpoints, todos sob o caminho `/cards`:
 
-```bash
-$ npm install
-```
+- **POST**: `/cards` - Cadastra um novo card. O corpo da requisição deve conter os seguintes parâmetros:
+    - `name` (nome do jogador)
+    - `answer` (resposta do jogador)
+    - `title` (palavra da rodada)
 
-## Running the app
+- **GET**: `/cards` - Retorna todos os cards cadastrados.
 
-```bash
-# development
-$ npm run start
+- **DELETE**: `/cards` - Deleta todos os cards cadastrados.
 
-# watch mode
-$ npm run start:dev
+## WebSocket
 
-# production mode
-$ npm run start:prod
-```
+O projeto utiliza o protocolo WebSocket para enviar os cards cadastrados para o moderador. Isso é feito através do evento chamado `cards`.
 
-## Test
+## Pré-requisitos
 
-```bash
-# unit tests
-$ npm run test
+Certifique-se de ter os seguintes softwares instalados em sua máquina:
 
-# e2e tests
-$ npm run test:e2e
+- Node.js (v14+)
+- npm (ou yarn)
 
-# test coverage
-$ npm run test:cov
-```
+## Como executar o projeto
 
-## Support
+1. Clone este repositório para a sua máquina local.
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+2. Abra o diretório do projeto no terminal.
 
-## Stay in touch
+3. Execute o seguinte comando para instalar as dependências:
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+   ```bash
+   npm install
+   
+4. Execute o seguinte comando para iniciar o servidor:
 
-## License
+   ```bash
+    npm run start
 
-Nest is [MIT licensed](LICENSE).
+O servidor estará em execução e pronto para receber requisições.
+
+## Testes
+
+O projeto possui testes automatizados para garantir o bom funcionamento das funcionalidades implementadas. Foram implementados testes unitários e testes E2E utilizando a biblioteca Jest.
+
+### Testes Unitários
+
+Os testes unitários são responsáveis por testar as funções e métodos de forma isolada, garantindo que cada parte da aplicação funcione corretamente. Para executar os testes unitários, basta executar o seguinte comando:
+
+-   ```bash
+    jest
+    
+### Testes E2E
+
+Os testes E2E são responsáveis por testar a aplicação de ponta a ponta, simulando a interação do usuário com a aplicação. Para executar os testes E2E, basta executar o seguinte comando:
+
+-   ```bash
+    jest --config ./test/jest-e2e.json
+
+## Deploy Automático com Render
+
+Este projeto possui integração com a plataforma Render, permitindo um processo de deploy automatizado e facilitado. O Render é uma plataforma de hospedagem que simplifica o deployment de aplicativos e oferece escalabilidade e alta disponibilidade.
+
+O deploy automático está configurado para este projeto, o que significa que sempre que você fizer push para o branch principal do repositório, o Render automaticamente atualizará a aplicação hospedada.
+
+### Acesso à Aplicação
+
+A aplicação está disponível para acesso na seguinte URL:
+
+[https://academia-4oto.onrender.com](https://academia-4oto.onrender.com)
+
+Certifique-se de acessar a URL acima para interagir com a aplicação.
+
+### Como Fazer Deploy Manualmente
+
+Caso queira fazer o deploy manualmente, siga as etapas abaixo:
+
+1. Faça o push do código para o branch principal do repositório.
+
+2. Acesse o painel do Render em [https://render.com](https://render.com) e faça login na sua conta (ou crie uma nova, caso ainda não tenha).
+
+3. Crie um novo serviço (service) no Render.
+
+4. Configure o serviço com as seguintes opções:
+    - Escolha a opção "Web Service".
+    - Selecione a opção "Automatic Deploy" (deploy automático) e escolha o repositório Git correto.
+
+5. Verifique se as configurações estão corretas e clique em "Create Service" (criar serviço).
+
+O Render irá automaticamente detectar o repositório e iniciar o processo de build e deploy da aplicação.
+
+Acompanhe o progresso do deploy no painel do Render. Após a conclusão, a aplicação estará disponível para acesso na URL fornecida pelo Render.
+
+
+## Repositório do Frontend
+
+O código-fonte do frontend do Jogo Academia está disponível no seguinte repositório do GitHub: [academia_boardgame_frontend](https://github.com/igorcruzf/academia_boardgame). 
