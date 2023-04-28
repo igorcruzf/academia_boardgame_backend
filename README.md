@@ -1,7 +1,6 @@
 # Auxiliador para o jogo Academia
 
-O Auxiliador para o jogo Academia é um projeto em NestJS com TypeScript que permite aos jogadores cadastrar palavras e definições, e aos moderadores cadastrar respostas corretas. Ele também fornece a funcionalidade de pontuação de acordo com a partida.
-
+O Auxiliador para o jogo Academia é um projeto em NestJS com TypeScript que permite aos jogadores cadastrar palavras e definições. Também permite receber todas as palavras cadastradas via endpoint ou via evento com websocket.
 ## Banco de Dados
 
 O projeto utiliza um banco de dados em memória para armazenar os cards cadastrados.
