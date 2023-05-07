@@ -1,26 +1,52 @@
 # Auxiliador para o jogo Academia
 
-O Auxiliador para o jogo Academia é um projeto em NestJS com TypeScript que permite aos jogadores cadastrar palavras e definições. Também permite receber todas as palavras cadastradas via endpoint ou via evento com websocket.
+O Auxiliador para o jogo Academia é um projeto em NestJS com TypeScript que permite aos jogadores cadastrar palavras 
+e definições. Também permite receber todas as palavras cadastradas via endpoint ou via evento com websocket.
+Além disso, possui gerenciamento de pontuação e sala, para permitir jogos simultâneos.
+
 ## Banco de Dados
 
 O projeto utiliza um banco de dados em memória para armazenar os cards cadastrados.
 
 ## Endpoints
 
-O projeto possui os seguintes endpoints, todos sob o caminho `/cards`:
+O projeto possui os seguintes endpoints:
 
-- **POST**: `/cards` - Cadastra um novo card. O corpo da requisição deve conter os seguintes parâmetros:
-    - `name` (nome do jogador)
-    - `answer` (resposta do jogador)
-    - `title` (palavra da rodada)
+- `/rooms`
+  - **POST**: - Cria uma nova sala de jogo. O corpo da requisição deve conter o seguinte parâmetro:
+      - `name` (nome da sala)
 
-- **GET**: `/cards` - Retorna todos os cards cadastrados.
+  - **POST**: `/newRound` - Inicia uma nova rodada na sala de jogo. O corpo da requisição deve conter os seguintes parâmetros:
+      - `roomName` (nome da sala)
+      - `scores` (pontuação dos jogadores na rodada)
 
-- **DELETE**: `/cards` - Deleta todos os cards cadastrados.
+  - **POST**: `/newGame` - Inicia um novo jogo na sala de jogo. O corpo da requisição deve conter o seguinte parâmetro:
+      - `name` (nome da sala)
+
+- `/players`
+  - **GET**: - Retorna a lista de jogadores ordenados pela pontuação total. A consulta pode ser filtrada pelo nome da sala através do parâmetro de consulta `roomName`.
+
+  - **POST**: - Cadastra um novo jogador na sala de jogo. O corpo da requisição deve conter os seguintes parâmetros:
+      - `roomName` (ID da sala de jogo)
+      - `name` (nome do jogador)
+
+  - **PATCH**: `/:id` - Altera a sala de jogo de um jogador específico. O corpo da requisição deve conter o seguinte parâmetro:
+      - `roomName` (novo nome da sala)
+
+- `/cards`
+  - **GET**: - Retorna a lista de cartas cadastradas. A consulta pode ser filtrada pelo nome da sala através do parâmetro de consulta `roomName`.
+
+  - **POST**: - Cadastra uma nova carta na sala de jogo. O corpo da requisição deve conter os seguintes parâmetros:
+      - `playerId` (ID do jogador que criou a carta)
+      - `title` (título da carta)
+      - `answer` (resposta da carta)
+
+  - **DELETE**: - Deleta todas as cartas cadastradas na sala de jogo especificada. A consulta pode ser filtrada pelo nome da sala através do parâmetro de consulta `roomName`.
+
 
 ## WebSocket
 
-O projeto utiliza o protocolo WebSocket para enviar os cards cadastrados para o moderador. Isso é feito através do evento chamado `cards`.
+O projeto utiliza o protocolo WebSocket para enviar os cards cadastrados para o moderador. Isso é feito através do evento chamado `cardsOf${roomName}`.
 
 ## Pré-requisitos
 

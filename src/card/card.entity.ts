@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne } from 'typeorm';
+import { Player } from '../player/player.entity';
 
 @Entity()
 export class Card {
@@ -6,11 +7,11 @@ export class Card {
   id: number;
 
   @Column()
-  name: string;
-
-  @Column()
   title: string;
 
   @Column()
   answer: string;
+
+  @OneToOne(() => Player, (player) => player.card, { onDelete: 'SET NULL' })
+  player: Player;
 }
