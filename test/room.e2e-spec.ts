@@ -21,7 +21,7 @@ describe('RoomController (E2E)', () => {
   let cardRepository: Repository<Card>;
   let scoreRepository: Repository<Score>;
 
-  const roomName = 'Test Room';
+  const roomName = 'Test Room - Room controller';
   let room: Room;
   let player: Player;
   let player2: Player;
@@ -33,6 +33,10 @@ describe('RoomController (E2E)', () => {
     roomRepository = testModule.roomRepository;
     scoreRepository = testModule.scoreRepository;
     cardRepository = testModule.cardRepository;
+
+    await playerRepository.clear();
+    await roomRepository.clear();
+    await scoreRepository.clear();
 
     room = await createRoomMock(roomRepository, roomName);
 
@@ -72,18 +76,18 @@ describe('RoomController (E2E)', () => {
         .send({ roomName, scores })
         .expect(HttpStatus.CREATED);
 
-      const room = await roomRepository.findOne({
+      const newRoom = await roomRepository.findOne({
         where: { name: roomName },
         relations: ['players', 'players.scores', 'players.card'],
       });
 
-      expect(room.actualRound).toBe(2);
-      expect(room.players[0].scores[0].score).toBe(10);
-      expect(room.players[0].scores[0].round).toBe(1);
-      expect(room.players[0].card).toBe(null);
-      expect(room.players[1].scores[0].score).toBe(5);
-      expect(room.players[1].scores[0].round).toBe(1);
-      expect(room.players[1].card).toBe(null);
+      expect(newRoom.actualRound).toBe(room.actualRound + 1);
+      expect(newRoom.players[0].scores[0].score).toBe(10);
+      expect(newRoom.players[0].scores[0].round).toBe(room.actualRound);
+      expect(newRoom.players[0].card).toBe(null);
+      expect(newRoom.players[1].scores[0].score).toBe(5);
+      expect(newRoom.players[1].scores[0].round).toBe(room.actualRound);
+      expect(newRoom.players[1].card).toBe(null);
     });
   });
 
@@ -109,16 +113,16 @@ describe('RoomController (E2E)', () => {
         .send({ roomDto })
         .expect(HttpStatus.CREATED);
 
-      const room = await roomRepository.findOne({
+      const newRoom = await roomRepository.findOne({
         where: { name: roomName },
         relations: ['players', 'players.scores', 'players.card'],
       });
 
-      expect(room.actualRound).toBe(1);
-      expect(room.players[0].scores).toEqual([]);
-      expect(room.players[0].card).toBe(null);
-      expect(room.players[1].scores).toEqual([]);
-      expect(room.players[1].card).toBe(null);
+      expect(newRoom.actualRound).toBe(room.actualRound);
+      expect(newRoom.players[0].scores).toEqual([]);
+      expect(newRoom.players[0].card).toBe(null);
+      expect(newRoom.players[1].scores).toEqual([]);
+      expect(newRoom.players[1].card).toBe(null);
     });
   });
 });

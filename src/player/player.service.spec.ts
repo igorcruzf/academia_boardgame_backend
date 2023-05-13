@@ -97,7 +97,11 @@ describe('PlayerService', () => {
 
   describe('getRankedPlayersByTotalScore', () => {
     it('should get players ranked by total score', async () => {
-      function buildMockPlayer(playerId: number, scoreValue: number): Player {
+      function buildMockPlayer(
+        playerId: number,
+        scoreValue: number,
+        roomName: string,
+      ): Player {
         const player = new Player();
         player.id = playerId;
         const score = new Score();
@@ -105,13 +109,17 @@ describe('PlayerService', () => {
         score.round = 1;
         score.player_id = player.id;
         player.scores = [score, score, score];
+        const room = new Room();
+        room.name = roomName;
+        room.actualRound = 1;
+        player.room = room;
         return player;
       }
 
       const roomName = 'Test Room';
-      const mockPlayer1 = buildMockPlayer(1, 1);
-      const mockPlayer2 = buildMockPlayer(2, 10);
-      const mockPlayer3 = buildMockPlayer(3, 5);
+      const mockPlayer1 = buildMockPlayer(1, 1, roomName);
+      const mockPlayer2 = buildMockPlayer(2, 10, roomName);
+      const mockPlayer3 = buildMockPlayer(3, 5, roomName);
 
       jest
         .spyOn(playerRepository, 'find')

@@ -63,7 +63,7 @@ describe('CardService', () => {
   });
 
   describe('createCard', () => {
-    it('should create a new card', async () => {
+    const createMockCard = ({ isRightAnswer }) => {
       const mockRoom = new Room();
       mockRoom.name = 'Test Room';
 
@@ -78,16 +78,47 @@ describe('CardService', () => {
       mockCard.title = 'Test Title';
       mockCard.answer = 'Test Answer';
       mockCard.player = mockPlayer;
+      mockCard.isRightAnswer = isRightAnswer;
 
-      jest.spyOn(playerService, 'findPlayerById').mockResolvedValue(mockPlayer);
+      return mockCard;
+    };
+
+    it('should create a new card', async () => {
+      const mockCard = createMockCard({ isRightAnswer: false });
+
+      jest
+        .spyOn(playerService, 'findPlayerById')
+        .mockResolvedValue(mockCard.player);
       jest.spyOn(cardService, 'emitAllCards').mockResolvedValue();
       jest.spyOn(cardRepository, 'save').mockResolvedValue(mockCard);
 
-      const result = await cardService.createCard(
-        playerId,
-        mockCard.title,
-        mockCard.answer,
-      );
+      const result = await cardService.createCard({
+        playerId: mockCard.player.id,
+        title: mockCard.title,
+        answer: mockCard.answer,
+        isRightAnswer: mockCard.isRightAnswer,
+      });
+
+      expect(cardRepository.save).toHaveBeenCalledWith(mockCard);
+      expect(cardService.emitAllCards).toHaveBeenCalled();
+      expect(result).toBe(mockCard);
+    });
+
+    it('should create a new card when the answer is right', async () => {
+      const mockCard = createMockCard({ isRightAnswer: true });
+
+      jest
+        .spyOn(playerService, 'findPlayerById')
+        .mockResolvedValue(mockCard.player);
+      jest.spyOn(cardService, 'emitAllCards').mockResolvedValue();
+      jest.spyOn(cardRepository, 'save').mockResolvedValue(mockCard);
+
+      const result = await cardService.createCard({
+        playerId: mockCard.player.id,
+        title: mockCard.title,
+        answer: mockCard.answer,
+        isRightAnswer: mockCard.isRightAnswer,
+      });
 
       expect(cardRepository.save).toHaveBeenCalledWith(mockCard);
       expect(cardService.emitAllCards).toHaveBeenCalled();
@@ -101,7 +132,12 @@ describe('CardService', () => {
         .mockRejectedValue(new PlayerNotFoundException(playerId));
 
       await expect(
-        cardService.createCard(playerId, 'title', 'answer'),
+        cardService.createCard({
+          playerId,
+          title: 'title',
+          answer: 'answer',
+          isRightAnswer: false,
+        }),
       ).rejects.toThrow(new PlayerNotFoundException(playerId));
     });
   });

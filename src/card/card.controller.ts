@@ -13,8 +13,7 @@ export class CardController {
   }
   @Post('/')
   async createCard(@Body() createCardDto: CreateCardDto): Promise<Card> {
-    const { playerId, title, answer } = createCardDto;
-    return await this.cardService.createCard(playerId, title, answer);
+    return await this.cardService.createCard(createCardDto);
   }
   @Delete('/')
   async deleteAllCards(@Query('roomName') roomName: string): Promise<void> {

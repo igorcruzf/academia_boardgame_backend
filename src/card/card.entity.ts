@@ -14,4 +14,6 @@ export class Card {
 
   @OneToOne(() => Player, (player) => player.card, { onDelete: 'SET NULL' })
   player: Player;
+  @Column('boolean', { default: false })
+  isRightAnswer?: boolean = false;
 }

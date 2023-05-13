@@ -39,10 +39,11 @@ export async function buildTestModule() {
 export async function createRoomMock(
   roomRepository: Repository<Room>,
   roomName = 'Test Room',
+  actualRound = 2,
 ) {
   return await roomRepository.save({
     name: roomName,
-    actualRound: 1,
+    actualRound: actualRound,
     players: [],
   });
 }

@@ -5,6 +5,7 @@ import { Card } from './card.entity';
 import { CardGateway } from './card.gateway';
 import { Player } from '../player/player.entity';
 import { PlayerService } from '../player/player.service';
+import { CreateCardDto } from './create-card.dto';
 
 @Injectable()
 export class CardService {
@@ -15,17 +16,18 @@ export class CardService {
     private readonly cardGateway: CardGateway,
     private readonly playerService: PlayerService,
   ) {}
-  async createCard(
-    playerId: number,
-    title: string,
-    answer: string,
-  ): Promise<Card> {
+  async createCard(createCardDto: CreateCardDto): Promise<Card> {
     this.logger.log(
-      `Creating card with playerId: ${playerId}, title: ${title}, answer: ${answer}`,
+      `Creating card with playerId: ${createCardDto.playerId}, 
+      title: ${createCardDto.title}, 
+      answer: ${createCardDto.answer}, 
+      isRightAnswer: ${createCardDto.isRightAnswer}`,
     );
 
-    const player = await this.playerService.findPlayerById(playerId);
-    const card = this.buildCard(title, answer, player);
+    const player = await this.playerService.findPlayerById(
+      createCardDto.playerId,
+    );
+    const card = this.buildCard(createCardDto, player);
 
     return this.cardRepository.save(card).then(async (savedCard) => {
       this.logger.log(`Card created with ID: ${savedCard.id}`);
@@ -34,11 +36,12 @@ export class CardService {
     });
   }
 
-  private buildCard(title: string, answer: string, player: Player) {
+  private buildCard(createCardDto: CreateCardDto, player: Player) {
     const card = new Card();
-    card.title = title;
-    card.answer = answer;
+    card.title = createCardDto.title;
+    card.answer = createCardDto.answer;
     card.player = player;
+    card.isRightAnswer = createCardDto.isRightAnswer;
     return card;
   }
   async getAllCardsByRoom(roomName: string): Promise<Card[]> {
@@ -50,7 +53,9 @@ export class CardService {
   }
   async emitAllCards(room: string): Promise<void> {
     const cards = await this.getAllCardsByRoom(room);
-    this.logger.log(`Emitting total of ${cards.length} cards to event 'cards'`);
+    this.logger.log(
+      `Emitting total of ${cards.length} cards to event 'cardsOf${room}'`,
+    );
     this.cardGateway.server.emit(`cardsOf${room}`, cards);
     this.logger.log(`Emitted successfully'`);
   }

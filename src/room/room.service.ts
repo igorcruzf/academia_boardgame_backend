@@ -29,9 +29,13 @@ export class RoomService {
     newRoom.name = roomName;
     newRoom.actualRound = 1;
 
-    return this.roomRepository.save(newRoom);
+    return this.roomRepository.save(newRoom).then((room) => {
+      this.logger.log(`Room with name ${roomName} created with success`);
+      return room;
+    });
   }
   async findRoomByName(room: string): Promise<Room> {
+    this.logger.log(`Finding room with name: ${room}`);
     const targetRoom = await this.roomRepository.findOne({
       where: { name: room },
       relations: ['players'],
@@ -39,6 +43,7 @@ export class RoomService {
     if (!targetRoom) {
       throw new RoomNotFoundException(room);
     }
+    this.logger.log(`Room with name: ${room} found`);
     return targetRoom;
   }
 

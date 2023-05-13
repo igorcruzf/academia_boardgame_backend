@@ -28,7 +28,7 @@ describe('PlayerController (e2e)', () => {
     roomRepository = testModule.roomRepository;
     scoreRepository = testModule.scoreRepository;
 
-    room = await createRoomMock(roomRepository);
+    room = await createRoomMock(roomRepository, 'Test Room', 3);
 
     const players = await createPlayersMock(playerRepository, room);
     player1 = players.player1;
@@ -58,6 +58,16 @@ describe('PlayerController (e2e)', () => {
           round: 1,
           player_id: player1.id,
         },
+        {
+          score: 10,
+          round: 2,
+          player_id: player2.id,
+        },
+        {
+          score: 5,
+          round: 2,
+          player_id: player3.id,
+        },
       ]);
 
       const response = await request(app.getHttpServer())
@@ -67,8 +77,13 @@ describe('PlayerController (e2e)', () => {
 
       expect(rankedPlayers).toHaveLength(3);
       expect(rankedPlayers[0].id).toBe(player2.id);
+      expect(rankedPlayers[0].scores.length).toBe(2);
       expect(rankedPlayers[1].id).toBe(player3.id);
+      expect(rankedPlayers[1].scores.length).toBe(2);
       expect(rankedPlayers[2].id).toBe(player1.id);
+      expect(rankedPlayers[2].scores.length).toBe(2);
+      expect(rankedPlayers[2].scores[1].score).toBe(0);
+      expect(rankedPlayers[2].scores[1].round).toBe(2);
     });
   });
 

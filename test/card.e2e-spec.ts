@@ -30,6 +30,9 @@ describe('CardController (e2e)', () => {
     cardRepository = testModule.cardRepository;
     server = app.getHttpServer();
 
+    await playerRepository.clear();
+    await roomRepository.clear();
+
     const room = await createRoomMock(roomRepository, roomName);
 
     const players = await createPlayersMock(playerRepository, room);
@@ -58,6 +61,7 @@ describe('CardController (e2e)', () => {
         playerId: player.id,
         title: 'New Card',
         answer: 'New Answer',
+        isRightAnswer: false,
       };
 
       const response = await request(server)
@@ -69,6 +73,7 @@ describe('CardController (e2e)', () => {
 
       expect(response.body.title).toEqual(createCardDto.title);
       expect(response.body.answer).toEqual(createCardDto.answer);
+      expect(response.body.isRightAnswer).toEqual(createCardDto.isRightAnswer);
       expect(response.body.player.id).toEqual(createCardDto.playerId);
     });
 
@@ -78,6 +83,7 @@ describe('CardController (e2e)', () => {
         playerId,
         title: 'New Card',
         answer: 'New Answer',
+        isRightAnswer: true,
       };
 
       const response = await request(server)

@@ -67,6 +67,7 @@ describe('CardController', () => {
         title: 'Test Title',
         answer: 'Test Answer',
         playerId: 1,
+        isRightAnswer: false,
       };
       const mockCard = new Card();
 
@@ -74,11 +75,7 @@ describe('CardController', () => {
 
       const result = await cardController.createCard(mockCreateCardDto);
 
-      expect(cardService.createCard).toHaveBeenCalledWith(
-        mockCreateCardDto.playerId,
-        mockCreateCardDto.title,
-        mockCreateCardDto.answer,
-      );
+      expect(cardService.createCard).toHaveBeenCalledWith(mockCreateCardDto);
       expect(result).toBe(mockCard);
     });
   });
