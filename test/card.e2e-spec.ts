@@ -1,106 +1,113 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { CardController } from '../src/card/card.controller';
-import { CardService } from '../src/card/card.service';
 import { CreateCardDto } from '../src/card/create-card.dto';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { Card } from '../src/card/card.entity';
-import { CardGateway } from '../src/card/card.gateway';
-import { DatabaseModule } from '../src/card/database.module';
-import { Server } from 'socket.io';
-
+import { Player } from '../src/player/player.entity';
+import { Repository } from 'typeorm';
+import { Room } from '../src/room/room.entity';
+import {
+  buildTestModule,
+  createCardMocks,
+  createPlayersMock,
+  createRoomMock,
+} from './e2e.utils';
 describe('CardController (e2e)', () => {
   let app: INestApplication;
-  let cardService: CardService;
-  let mockServer: Partial<Server>;
+  let server;
+  let playerRepository: Repository<Player>;
+  let roomRepository: Repository<Room>;
+  let cardRepository: Repository<Card>;
+
+  const roomName = 'Test Room';
+  let cards: Card[];
+  let player: Player;
 
   beforeEach(async () => {
-    mockServer = {
-      emit: jest.fn(),
-    } as any;
+    const testModule = await buildTestModule();
+    app = testModule.app;
+    playerRepository = testModule.playerRepository;
+    roomRepository = testModule.roomRepository;
+    cardRepository = testModule.cardRepository;
+    server = app.getHttpServer();
 
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [
-        DatabaseModule, // Include the DatabaseModule with the in-memory database configuration
-        TypeOrmModule.forFeature([Card]),
-      ],
-      controllers: [CardController],
-      providers: [
-        CardService,
-        {
-          provide: CardGateway,
-          useValue: {
-            server: mockServer,
-          },
-        },
-      ],
-    }).compile();
-    cardService = moduleFixture.get<CardService>(CardService);
-    app = moduleFixture.createNestApplication();
-    await app.init();
+    await playerRepository.clear();
+    await roomRepository.clear();
+
+    const room = await createRoomMock(roomRepository, roomName);
+
+    const players = await createPlayersMock(playerRepository, room);
+    player = players.player1;
+    cards = await createCardMocks(cardRepository, player, players.player2);
   });
 
   afterAll(async () => {
     await app.close();
   });
 
-  beforeEach(async () => {
-    await cardService.deleteAllCards();
-  });
-
-  describe('/cards (GET)', () => {
-    it('should return an array of cards', async () => {
-      const card1 = await cardService.createCard(
-        'Card 1',
-        'Title 1',
-        'Answer 1',
-      );
-      const card2 = await cardService.createCard(
-        'Card 2',
-        'Title 2',
-        'Answer 2',
-      );
-
-      const response = await request(app.getHttpServer())
+  describe('GET /cards', () => {
+    it('should return all cards by room', async () => {
+      const response = await request(server)
         .get('/cards')
-        .expect(200);
+        .query({ room: roomName });
 
-      expect(response.body).toEqual([card1, card2]);
+      expect(response.status).toBe(200);
+      expect(response.body.length).toEqual(cards.length);
     });
   });
 
-  describe('/cards (POST)', () => {
+  describe('POST /cards', () => {
     it('should create a new card', async () => {
       const createCardDto: CreateCardDto = {
-        name: 'New Card',
-        title: 'New Title',
+        playerId: player.id,
+        title: 'New Card',
         answer: 'New Answer',
+        isRightAnswer: false,
       };
-      await request(app.getHttpServer())
+
+      const response = await request(server)
         .post('/cards')
         .send(createCardDto)
+        .set('Accept', 'application/json')
+        .expect('Content-Type', /json/)
         .expect(201);
-      const createdCard = await cardService
-        .getAllCards()
-        .then((cards) => cards[0]);
 
-      expect(createdCard).toBeDefined();
-      expect(createdCard.name).toBe(createCardDto.name);
-      expect(createdCard.title).toBe(createCardDto.title);
-      expect(createdCard.answer).toBe(createCardDto.answer);
+      expect(response.body.title).toEqual(createCardDto.title);
+      expect(response.body.answer).toEqual(createCardDto.answer);
+      expect(response.body.isRightAnswer).toEqual(createCardDto.isRightAnswer);
+      expect(response.body.player.id).toEqual(createCardDto.playerId);
+    });
+
+    it('should throw an error if player not found', async () => {
+      const playerId = 12321;
+      const createCardDto: CreateCardDto = {
+        playerId,
+        title: 'New Card',
+        answer: 'New Answer',
+        isRightAnswer: true,
+      };
+
+      const response = await request(server)
+        .post('/cards')
+        .send(createCardDto)
+        .set('Accept', 'application/json')
+        .expect('Content-Type', /json/)
+        .expect(404);
+
+      expect(response.body).toHaveProperty(
+        'message',
+        `Player with ID ${playerId} not found.`,
+      );
     });
   });
 
-  describe('/cards (DELETE)', () => {
-    it('should delete all cards', async () => {
-      await cardService.createCard('Card 1', 'Title 1', 'Answer 1');
-      await cardService.createCard('Card 2', 'Title 2', 'Answer 2');
+  describe('DELETE /cards', () => {
+    it('should delete all cards by room', async () => {
+      const response = await request(server)
+        .delete('/cards')
+        .query({ room: roomName })
+        .expect(200);
 
-      await request(app.getHttpServer()).delete('/cards').expect(200);
-
-      const allCards = await cardService.getAllCards();
-      expect(allCards).toHaveLength(0);
+      expect(response.text).toBe('');
     });
   });
 });

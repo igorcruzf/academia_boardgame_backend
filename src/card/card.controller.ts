@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Body } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Query } from '@nestjs/common';
 import { CardService } from './card.service';
 import { Card } from './card.entity';
 import { CreateCardDto } from './create-card.dto';
@@ -7,19 +7,16 @@ import { CreateCardDto } from './create-card.dto';
 export class CardController {
   constructor(private readonly cardService: CardService) {}
 
-  @Get()
-  async getAllCards(): Promise<Card[]> {
-    return this.cardService.getAllCards();
+  @Get('/')
+  async getAllCards(@Query('roomName') roomName: string): Promise<Card[]> {
+    return await this.cardService.getAllCardsByRoom(roomName);
   }
-
-  @Post()
+  @Post('/')
   async createCard(@Body() createCardDto: CreateCardDto): Promise<Card> {
-    const { name, title, answer } = createCardDto;
-    return this.cardService.createCard(name, title, answer);
+    return await this.cardService.createCard(createCardDto);
   }
-
-  @Delete()
-  async deleteAllCards(): Promise<void> {
-    await this.cardService.deleteAllCards();
+  @Delete('/')
+  async deleteAllCards(@Query('roomName') roomName: string): Promise<void> {
+    await this.cardService.deleteAllCards(roomName);
   }
 }

@@ -1,14 +1,28 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { DatabaseModule } from './card/database.module';
-import { Card } from './card/card.entity';
-import { CardService } from './card/card.service';
-import { CardController } from './card/card.controller';
-import { CardGateway } from './card/card.gateway';
+import { DatabaseModule } from './database.module';
+import { Score } from './score/score.entity';
+import { CardModule } from './card/card.module';
+import { PlayerModule } from './player/player.module';
+import { RoomModule } from './room/room.module';
+import { ScoreModule } from './score/score.module';
+import { APP_FILTER } from '@nestjs/core';
+import { AppFilter } from './app.filter';
 
 @Module({
-  imports: [DatabaseModule, TypeOrmModule.forFeature([Card])],
-  controllers: [CardController],
-  providers: [CardService, CardGateway],
+  imports: [
+    DatabaseModule,
+    TypeOrmModule.forFeature([Score]),
+    CardModule,
+    PlayerModule,
+    RoomModule,
+    ScoreModule,
+  ],
+  providers: [
+    {
+      provide: APP_FILTER,
+      useClass: AppFilter,
+    },
+  ],
 })
 export class AppModule {}

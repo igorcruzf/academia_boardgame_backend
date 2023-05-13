@@ -1,5 +1,6 @@
 export class CreateCardDto {
-  name: string;
+  playerId: number;
   title: string;
   answer: string;
+  isRightAnswer: boolean;
 }

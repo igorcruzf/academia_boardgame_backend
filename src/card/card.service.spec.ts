@@ -1,13 +1,21 @@
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { DeleteResult, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Card } from './card.entity';
 import { CardGateway } from './card.gateway';
 import { CardService } from './card.service';
 import { Server } from 'socket.io';
+import { Room } from '../room/room.entity';
+import { Player } from '../player/player.entity';
+import { PlayerService } from '../player/player.service';
+import { RoomService } from '../room/room.service';
+import { ScoreService } from '../score/score.service';
+import { Score } from '../score/score.entity';
+import { PlayerNotFoundException } from '../player/exception/player-not-found.exception';
 
 describe('CardService', () => {
   let cardService: CardService;
+  let playerService: PlayerService;
   let cardRepository: Repository<Card>;
 
   let mockServer: Partial<Server>;
@@ -21,8 +29,23 @@ describe('CardService', () => {
       providers: [
         CardService,
         CardGateway,
+        PlayerService,
+        RoomService,
+        ScoreService,
         {
           provide: getRepositoryToken(Card),
+          useClass: Repository,
+        },
+        {
+          provide: getRepositoryToken(Player),
+          useClass: Repository,
+        },
+        {
+          provide: getRepositoryToken(Room),
+          useClass: Repository,
+        },
+        {
+          provide: getRepositoryToken(Score),
           useClass: Repository,
         },
         {
@@ -35,38 +58,100 @@ describe('CardService', () => {
     }).compile();
 
     cardService = moduleRef.get<CardService>(CardService);
+    playerService = moduleRef.get<PlayerService>(PlayerService);
     cardRepository = moduleRef.get<Repository<Card>>(getRepositoryToken(Card));
   });
 
   describe('createCard', () => {
-    it('should create a new card', async () => {
+    const createMockCard = ({ isRightAnswer }) => {
+      const mockRoom = new Room();
+      mockRoom.name = 'Test Room';
+
+      const playerId = 1;
+
+      const mockPlayer = new Player();
+      mockPlayer.room = mockRoom;
+      mockPlayer.name = 'Test Name';
+      mockPlayer.id = playerId;
+
       const mockCard = new Card();
-      mockCard.name = 'Test Card';
       mockCard.title = 'Test Title';
       mockCard.answer = 'Test Answer';
+      mockCard.player = mockPlayer;
+      mockCard.isRightAnswer = isRightAnswer;
 
-      jest.spyOn(cardRepository, 'save').mockResolvedValue(mockCard);
+      return mockCard;
+    };
+
+    it('should create a new card', async () => {
+      const mockCard = createMockCard({ isRightAnswer: false });
+
+      jest
+        .spyOn(playerService, 'findPlayerById')
+        .mockResolvedValue(mockCard.player);
       jest.spyOn(cardService, 'emitAllCards').mockResolvedValue();
+      jest.spyOn(cardRepository, 'save').mockResolvedValue(mockCard);
 
-      const result = await cardService.createCard(
-        mockCard.name,
-        mockCard.title,
-        mockCard.answer,
-      );
+      const result = await cardService.createCard({
+        playerId: mockCard.player.id,
+        title: mockCard.title,
+        answer: mockCard.answer,
+        isRightAnswer: mockCard.isRightAnswer,
+      });
 
       expect(cardRepository.save).toHaveBeenCalledWith(mockCard);
       expect(cardService.emitAllCards).toHaveBeenCalled();
       expect(result).toBe(mockCard);
     });
+
+    it('should create a new card when the answer is right', async () => {
+      const mockCard = createMockCard({ isRightAnswer: true });
+
+      jest
+        .spyOn(playerService, 'findPlayerById')
+        .mockResolvedValue(mockCard.player);
+      jest.spyOn(cardService, 'emitAllCards').mockResolvedValue();
+      jest.spyOn(cardRepository, 'save').mockResolvedValue(mockCard);
+
+      const result = await cardService.createCard({
+        playerId: mockCard.player.id,
+        title: mockCard.title,
+        answer: mockCard.answer,
+        isRightAnswer: mockCard.isRightAnswer,
+      });
+
+      expect(cardRepository.save).toHaveBeenCalledWith(mockCard);
+      expect(cardService.emitAllCards).toHaveBeenCalled();
+      expect(result).toBe(mockCard);
+    });
+
+    it('should throw error if player not found', async () => {
+      const playerId = 1;
+      jest
+        .spyOn(playerService, 'findPlayerById')
+        .mockRejectedValue(new PlayerNotFoundException(playerId));
+
+      await expect(
+        cardService.createCard({
+          playerId,
+          title: 'title',
+          answer: 'answer',
+          isRightAnswer: false,
+        }),
+      ).rejects.toThrow(new PlayerNotFoundException(playerId));
+    });
   });
 
-  describe('getAllCards', () => {
+  describe('getAllCardsByRoom', () => {
     it('should return an array of cards', async () => {
+      const mockRoom = new Room();
+      mockRoom.name = 'Test room';
+
       const mockCards = [new Card(), new Card()];
 
       jest.spyOn(cardRepository, 'find').mockResolvedValue(mockCards);
 
-      const result = await cardService.getAllCards();
+      const result = await cardService.getAllCardsByRoom(mockRoom.name);
 
       expect(cardRepository.find).toHaveBeenCalled();
       expect(result).toBe(mockCards);
@@ -74,24 +159,28 @@ describe('CardService', () => {
   });
   describe('deleteAllCards', () => {
     it('should delete all cards', async () => {
-      const mockDeleteResult: DeleteResult = { affected: 2, raw: {} };
+      const cards = [new Card(), new Card()];
+      jest.spyOn(cardService, 'getAllCardsByRoom').mockResolvedValue(cards);
+      const removeSpy = jest
+        .spyOn(cardRepository, 'remove')
+        .mockResolvedValue(cards[0]);
+      await cardService.deleteAllCards('room');
 
-      const deleteSpy = jest
-        .spyOn(cardRepository, 'delete')
-        .mockResolvedValue(mockDeleteResult);
-      await cardService.deleteAllCards();
-
-      expect(deleteSpy).toHaveBeenCalledWith({});
+      expect(removeSpy).toHaveBeenCalledWith(cards);
     });
   });
   describe('emitCards', () => {
     it('should emit all cards', async () => {
       const mockCards = [new Card(), new Card()];
-      jest.spyOn(cardRepository, 'find').mockResolvedValue(mockCards);
+      const roomName = 'Test Room';
+      jest.spyOn(cardService, 'getAllCardsByRoom').mockResolvedValue(mockCards);
 
-      await cardService.emitAllCards();
-      expect(cardRepository.find).toHaveBeenCalled();
-      expect(mockServer.emit).toHaveBeenCalledWith('cards', mockCards);
+      await cardService.emitAllCards(roomName);
+      expect(cardService.getAllCardsByRoom).toHaveBeenCalled();
+      expect(mockServer.emit).toHaveBeenCalledWith(
+        `cardsOf${roomName}`,
+        mockCards,
+      );
     });
   });
 });

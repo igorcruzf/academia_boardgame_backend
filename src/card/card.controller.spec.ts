@@ -6,6 +6,12 @@ import { CreateCardDto } from './create-card.dto';
 import { CardGateway } from './card.gateway';
 import { Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { Room } from '../room/room.entity';
+import { PlayerService } from '../player/player.service';
+import { RoomService } from '../room/room.service';
+import { ScoreService } from '../score/score.service';
+import { Player } from '../player/player.entity';
+import { Score } from '../score/score.entity';
 
 describe('CardController', () => {
   let cardController: CardController;
@@ -16,11 +22,26 @@ describe('CardController', () => {
       controllers: [CardController],
       providers: [
         CardService,
+        CardGateway,
+        PlayerService,
+        RoomService,
+        ScoreService,
         {
           provide: getRepositoryToken(Card),
           useClass: Repository,
         },
-        CardGateway,
+        {
+          provide: getRepositoryToken(Player),
+          useClass: Repository,
+        },
+        {
+          provide: getRepositoryToken(Room),
+          useClass: Repository,
+        },
+        {
+          provide: getRepositoryToken(Score),
+          useClass: Repository,
+        },
       ],
     }).compile();
 
@@ -31,11 +52,11 @@ describe('CardController', () => {
   describe('getAllCards', () => {
     it('should return an array of cards', async () => {
       const mockCards = [new Card(), new Card()];
-      jest.spyOn(cardService, 'getAllCards').mockResolvedValue(mockCards);
+      jest.spyOn(cardService, 'getAllCardsByRoom').mockResolvedValue(mockCards);
 
-      const result = await cardController.getAllCards();
+      const result = await cardController.getAllCards('room');
 
-      expect(cardService.getAllCards).toHaveBeenCalled();
+      expect(cardService.getAllCardsByRoom).toHaveBeenCalled();
       expect(result).toBe(mockCards);
     });
   });
@@ -43,9 +64,10 @@ describe('CardController', () => {
   describe('createCard', () => {
     it('should create a new card', async () => {
       const mockCreateCardDto: CreateCardDto = {
-        name: 'Test Card',
         title: 'Test Title',
         answer: 'Test Answer',
+        playerId: 1,
+        isRightAnswer: false,
       };
       const mockCard = new Card();
 
@@ -53,11 +75,7 @@ describe('CardController', () => {
 
       const result = await cardController.createCard(mockCreateCardDto);
 
-      expect(cardService.createCard).toHaveBeenCalledWith(
-        mockCreateCardDto.name,
-        mockCreateCardDto.title,
-        mockCreateCardDto.answer,
-      );
+      expect(cardService.createCard).toHaveBeenCalledWith(mockCreateCardDto);
       expect(result).toBe(mockCard);
     });
   });
@@ -66,7 +84,7 @@ describe('CardController', () => {
     it('should delete all cards', async () => {
       jest.spyOn(cardService, 'deleteAllCards').mockResolvedValue();
 
-      await cardController.deleteAllCards();
+      await cardController.deleteAllCards('room');
 
       expect(cardService.deleteAllCards).toHaveBeenCalled();
     });
